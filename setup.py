@@ -1,12 +1,12 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
-  name="mcp",
-  version="0.1",
-  packages=["mcp"],
-  entry_points={
-    "console_scripts": [
-      "mcp = mcp.__init__:main"
-    ]
-  },
+    name="mcpdata",
+    version="0.1",
+    packages=find_packages(),
+    entry_points={
+        "console_scripts": [
+            "mcpdata = mcpdata.__init__:main"
+        ]
+    },
 )

@@ -350,42 +350,121 @@ class CentralRegistry:
         self._save_registry()
 
     def global_search(self, query: str, max_results: int = 20) -> List[GlobalSearchMetadata]:
-        """Perform global search across all workspaces"""
-        query_lower = query.lower()
+        """Perform enhanced global search across all workspaces with multi-keyword support"""
+        # Split query into individual terms
+        query_terms = [term.strip().lower() for term in query.split() if len(term.strip()) > 2]
+
+        if not query_terms:
+            return []
+
         results = []
 
         for item in self._global_search_data:
             score = 0.0
+            matched_terms = 0
 
-            # Title match (higher weight)
-            if query_lower in item.title.lower():
-                score += 10.0
+            # Searchable content
+            title_lower = item.title.lower()
+            content_lower = item.content_preview.lower()
+            keywords_lower = [kw.lower() for kw in item.keywords]
+            file_path_lower = item.file_path.lower()
+            workspace_name_lower = item.workspace_name.lower()
 
-            # Content preview match
-            if query_lower in item.content_preview.lower():
-                score += 5.0
+            # Score each term individually
+            for term in query_terms:
+                term_score = 0.0
 
-            # Keywords match
-            for keyword in item.keywords:
-                if query_lower in keyword.lower():
+                # Exact title match (highest weight)
+                if term in title_lower:
+                    if title_lower == term:  # Exact title match
+                        term_score += 15.0
+                    elif title_lower.startswith(term) or title_lower.endswith(term):
+                        term_score += 12.0
+                    else:
+                        term_score += 8.0
+                    matched_terms += 1
+
+                # Content preview match
+                if term in content_lower:
+                    # Count occurrences for frequency bonus
+                    occurrences = content_lower.count(term)
+                    term_score += min(occurrences * 2.0, 6.0)  # Cap at 6.0
+                    matched_terms += 1
+
+                # Keywords exact match
+                for keyword in keywords_lower:
+                    if term == keyword:  # Exact keyword match
+                        term_score += 5.0
+                    elif term in keyword:  # Partial keyword match
+                        term_score += 3.0
+
+                # File path match (lower weight)
+                if term in file_path_lower:
+                    # Filename matches are more important than path matches
+                    filename = Path(item.file_path).name.lower()
+                    if term in filename:
+                        term_score += 3.0
+                    else:
+                        term_score += 1.5
+                    matched_terms += 1
+
+                # Workspace name match
+                if term in workspace_name_lower:
+                    term_score += 2.0
+                    matched_terms += 1
+
+                score += term_score
+
+            # Apply term coverage bonus (how many query terms were found)
+            if matched_terms > 0:
+                coverage_ratio = matched_terms / len(query_terms)
+                coverage_bonus = coverage_ratio * 5.0
+                score += coverage_bonus
+
+                # Perfect match bonus (all terms found)
+                if matched_terms == len(query_terms):
                     score += 3.0
 
-            # File path match
-            if query_lower in item.file_path.lower():
-                score += 2.0
+                # Multi-term proximity bonus for content
+                if len(query_terms) > 1 and matched_terms > 1:
+                    proximity_bonus = self._calculate_proximity_score(content_lower, query_terms)
+                    score += proximity_bonus
 
-            # Workspace name match
-            if query_lower in item.workspace_name.lower():
-                score += 1.0
+                # Section type bonus
+                if item.section_type == 'code':
+                    score += 1.0
+                elif item.section_type == 'documentation':
+                    score += 0.5
 
-            if score > 0:
                 item.relevance_score = score
                 results.append(item)
 
-        # Sort by relevance score
+        # Sort by relevance score (highest first)
         results.sort(key=lambda x: x.relevance_score, reverse=True)
 
         return results[:max_results]
+
+    def _calculate_proximity_score(self, content: str, terms: List[str]) -> float:
+        """Calculate proximity bonus when multiple terms appear close together"""
+        try:
+            positions = []
+            for term in terms:
+                pos = content.find(term)
+                if pos != -1:
+                    positions.append(pos)
+
+            if len(positions) < 2:
+                return 0.0
+
+            positions.sort()
+            distances = [positions[i + 1] - positions[i] for i in range(len(positions) - 1)]
+            avg_distance = sum(distances) / len(distances)
+
+            # Closer terms get higher bonus (max 2.0 bonus)
+            proximity_score = max(0.0, 2.0 - (avg_distance / 50.0))
+            return proximity_score
+        except:
+            return 0.0
 
     def get_stats(self) -> RegistryStats:
         """Get registry statistics"""

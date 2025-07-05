@@ -1,2 +1,0 @@
-[console_scripts]
-mcp = mcp.__init__:main
