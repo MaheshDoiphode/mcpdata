@@ -98,27 +98,6 @@ mcpdata /project --workspace-name "Full Project" --workspace-description "Comple
 
 ## 🛠️ Advanced Examples
 
-### High-Performance Setup
-
-```bash
-# Fast indexing for large codebases
-mcpdata /large/codebase \
-  --parallel-workers 8 \
-  --no-embeddings \
-  --workspace-name "Large Codebase" \
-  --verbose
-```
-
-### Quality-Focused Setup
-
-```bash
-# Comprehensive indexing with embeddings
-mcpdata /important/docs \
-  --enable-embeddings \
-  --parallel-workers 4 \
-  --workspace-name "Critical Documentation"
-```
-
 ### Custom Configuration
 
 ```bash
@@ -127,23 +106,6 @@ mcpdata /project \
   --config custom-config.json \
   --workspace-name "Custom Project"
 ```
-
-## 📊 Performance Examples
-
-### Small Project (< 100 files)
-- **Indexing time**: ~5 seconds
-- **Search response**: 10-50ms
-- **Memory usage**: <50MB
-
-### Medium Project (100-1000 files)
-- **Indexing time**: ~30 seconds
-- **Search response**: 50-200ms
-- **Memory usage**: <200MB
-
-### Large Project (1000+ files)
-- **Indexing time**: 2-5 minutes
-- **Search response**: 100-500ms
-- **Memory usage**: <500MB
 
 ## 🎯 Real Success Stories
 

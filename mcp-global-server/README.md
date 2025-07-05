@@ -50,16 +50,16 @@ pip install mcp fastmcp python-dotenv httpx
 
 ```bash
 # First, install and use mcpdata
-cd ../mcpdata
+cd mcpdata
 pip install -e .
 
 # Index your documentation
-mcp /path/to/your/docs \
+mcpdata /path/to/your/docs \
   --workspace-name "API Documentation" \
   --workspace-description "REST API documentation and guides"
 
 # Index your code
-mcp /path/to/your/code \
+mcpdata /path/to/your/code \
   --workspace-name "Source Code" \
   --workspace-description "Main application source code"
 ```
@@ -80,10 +80,37 @@ Add to your MCP client configuration (e.g., Claude Desktop):
   "mcpServers": {
     "global-docs": {
       "command": "python",
-      "args": ["C:\\path\\to\\localmcp\\mcp-global-server\\server.py"],
-      "cwd": "C:\\path\\to\\localmcp\\mcp-global-server"
+      "args": ["C:\\path\\to\\mcpdata\\mcp-global-server\\server.py"],
+      "cwd": "C:\\path\\to\\mcpdata\\mcp-global-server"
     }
   }
+}
+```
+
+### For GitHub Copilot
+
+Create `C:\Users\%UserProfile%\AppData\Roaming\Code\User\mcp.json`:
+
+```json
+{
+    "servers": {
+        "global-docs": {
+            "id": "global-docs",
+            "name": "global-docs", 
+            "version": "1.0.0",
+            "config": {
+                "type": "stdio",
+                "command": "C:\\Users\\%UserProfile%\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+                "args": [
+                    "C:\\path\\to\\your\\mcpdata\\mcp-global-server\\server.py"
+                ],
+                "env": {
+                    "MCP_REGISTRY_PATH": "C:\\Users\\%UserProfile%\\Documents\\mcpdata"
+                }
+            }
+        }
+    },
+    "inputs": []
 }
 ```
 

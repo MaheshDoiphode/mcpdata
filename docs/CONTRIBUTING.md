@@ -8,8 +8,8 @@ Guidelines for contributing to the Local MCP System.
 
 ```bash
 # Clone the repository
-git clone <repository-url>
-cd localmcp
+git clone https://github.com/MaheshDoiphode/mcpdata.git
+cd mcpdata
 
 # Install mcpdata in development mode
 cd mcpdata
@@ -20,8 +20,8 @@ cd ../mcp-global-server
 pip install -r requirements.txt
 
 # Test the setup
-cd ../mcpdata
-mcpdata . --workspace-name "localmcp" --workspace-description "The localmcp project itself"
+cd mcpdata
+mcpdata . --workspace-name "mcpdata" --workspace-description "The mcpdata project itself"
 ```
 
 ### Development Guidelines
@@ -45,8 +45,8 @@ mcpdata . --workspace-name "localmcp" --workspace-description "The localmcp proj
 ```bash
 # Fork the repository on GitHub
 # Clone your fork
-git clone https://github.com/yourusername/localmcp.git
-cd localmcp
+git clone https://github.com/yourusername/mcpdata.git
+cd mcpdata
 
 # Create feature branch
 git checkout -b feature-name

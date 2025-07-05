@@ -154,49 +154,6 @@ mcpdata /project --config minimal-config.json
 }
 ```
 
-## Performance Tuning
-
-### For Large Projects
-
-```json
-{
-  "indexing": {
-    "parallel_workers": 8,
-    "chunk_size": 1024,
-    "enable_embeddings": false,
-    "max_file_size": 5242880
-  }
-}
-```
-
-### For Memory-Constrained Systems
-
-```json
-{
-  "indexing": {
-    "parallel_workers": 2,
-    "chunk_size": 256,
-    "enable_embeddings": false
-  }
-}
-```
-
-### For High-Quality Search
-
-```json
-{
-  "indexing": {
-    "enable_embeddings": true,
-    "chunk_size": 512,
-    "parallel_workers": 4
-  },
-  "search": {
-    "relevance_threshold": 0.3,
-    "max_results": 20
-  }
-}
-```
-
 ## Examples
 
 See [EXAMPLES.md](EXAMPLES.md) for configuration examples in action.

@@ -29,8 +29,8 @@ pip install -r requirements.txt
 
 ```bash
 # Clone the repository
-git clone <repository-url>
-cd localmcp
+git clone https://github.com/MaheshDoiphode/mcpdata.git
+cd mcpdata
 
 # Install mcpdata in development mode
 cd mcpdata
@@ -41,8 +41,8 @@ cd ../mcp-global-server
 pip install -r requirements.txt
 
 # Test the setup
-cd ../mcpdata
-mcpdata . --workspace-name "localmcp" --workspace-description "The localmcp project itself"
+cd mcpdata
+mcpdata . --workspace-name "mcpdata" --workspace-description "The mcpdata project itself"
 
 cd ../mcp-global-server
 python server.py
@@ -74,6 +74,50 @@ python -c "from mcpdata.core.registry import CentralRegistry; print('✅ Server 
 - Use Terminal
 - May need to use `python3` and `pip3`
 - Ensure proper permissions for file operations
+
+## GitHub Copilot Configuration
+
+To use the Local MCP System with GitHub Copilot in VS Code:
+
+### 1. Create MCP Configuration File
+
+Create or edit: `C:\Users\%UserProfile%\AppData\Roaming\Code\User\mcp.json`
+
+### 2. Add Server Configuration
+
+```json
+{
+    "servers": {
+        "global-docs": {
+            "id": "global-docs",
+            "name": "global-docs",
+            "version": "1.0.0",
+            "config": {
+                "type": "stdio",
+                "command": "C:\\Users\\%UserProfile%\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+                "args": [
+                    "C:\\path\\to\\your\\mcpdata\\mcp-global-server\\server.py"
+                ],
+                "env": {
+                    "MCP_REGISTRY_PATH": "C:\\Users\\%UserProfile%\\Documents\\mcpdata"
+                }
+            }
+        }
+    },
+    "inputs": []
+}
+```
+
+### 3. Update Paths
+
+Replace the following in the configuration:
+- `C:\\Users\\%UserProfile%\\AppData\\Local\\Programs\\Python\\Python312\\python.exe` - Your Python installation path
+- `C:\\path\\to\\your\\mcpdata\\mcp-global-server\\server.py` - Your project location
+- `C:\\Users\\%UserProfile%\\Documents\\mcpdata` - Your MCP registry location
+
+### 4. Restart VS Code
+
+After saving the configuration, restart VS Code for the changes to take effect.
 
 ## Next Steps
 

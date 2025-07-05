@@ -27,9 +27,36 @@ Add to your MCP client configuration:
   "mcpServers": {
     "global-docs": {
       "command": "python",
-      "args": ["C:\\path\\to\\localmcp\\mcp-global-server\\server.py"]
+      "args": ["C:\\path\\to\\mcpdata\\mcp-global-server\\server.py"]
     }
   }
+}
+```
+
+### For GitHub Copilot
+
+Create `C:\Users\%UserProfile%\AppData\Roaming\Code\User\mcp.json`:
+
+```json
+{
+    "servers": {
+        "global-docs": {
+            "id": "global-docs",
+            "name": "global-docs",
+            "version": "1.0.0",
+            "config": {
+                "type": "stdio",
+                "command": "C:\\Users\\%UserProfile%\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+                "args": [
+                    "C:\\path\\to\\your\\mcpdata\\mcp-global-server\\server.py"
+                ],
+                "env": {
+                    "MCP_REGISTRY_PATH": "C:\\Users\\%UserProfile%\\Documents\\mcpdata"
+                }
+            }
+        }
+    },
+    "inputs": []
 }
 ```
 

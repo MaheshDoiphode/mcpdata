@@ -30,6 +30,39 @@ python server.py
 }
 ```
 
+## 🛠️ GitHub Copilot Configuration
+
+To use with GitHub Copilot, add the MCP server configuration to your VS Code settings:
+
+### Location
+Create or edit: `C:\Users\%UserProfile%\AppData\Roaming\Code\User\mcp.json`
+
+### Configuration
+```json
+{
+    "servers": {
+        "global-docs": {
+            "id": "global-docs",
+            "name": "global-docs",
+            "version": "1.0.0",
+            "config": {
+                "type": "stdio",
+                "command": "C:\\Users\\%UserProfile%\\AppData\\Local\\Programs\\Python\\Python312\\python.exe",
+                "args": [
+                    "C:\\path\\to\\your\\localmcp\\mcp-global-server\\server.py"
+                ],
+                "env": {
+                    "MCP_REGISTRY_PATH": "C:\\Users\\%UserProfile%\\Documents\\mcpdata"
+                }
+            }
+        }
+    },
+    "inputs": []
+}
+```
+
+**Note:** Replace the paths with your actual Python installation and project location.
+
 ## 🎮 Examples
 
 ### Search Across Documentation and Code
@@ -60,6 +93,7 @@ python server.py
 ## 🔗 Documentation
 
 - **[Complete Installation Guide](docs/INSTALLATION.md)**
+- **[GitHub Copilot Setup](docs/GITHUB-COPILOT.md)**
 - **[Configuration Options](docs/CONFIGURATION.md)**
 - **[Troubleshooting Guide](docs/TROUBLESHOOTING.md)**
 - **[Contributing Guide](docs/CONTRIBUTING.md)**
