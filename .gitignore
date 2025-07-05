@@ -1,3 +1,11 @@
 *.mcpdata/
 *build/
 *mcpdata.egg-info/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+test_*.py
+*.log
+.pytest_cache/
