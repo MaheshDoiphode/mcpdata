@@ -36,6 +36,7 @@ sys.path.insert(0, str(mcpdata_path))
 try:
     from mcpdata.core.registry import CentralRegistry, get_global_registry
     from mcpdata.core.search import SearchEngine
+    from mcpdata.core.knowledge_graph import get_knowledge_graph
 except ImportError as e:
     print(f"ERROR: Could not import mcpdata modules: {e}")
     print("Make sure mcpdata is properly installed")
@@ -139,10 +140,28 @@ async def search_workspaces(query: str, workspace_id: str = None, max_results: i
         JSON string with search results including file paths, line numbers, and context
     """
     try:
+        # Track this request in the knowledge graph
+        knowledge_graph = get_knowledge_graph()
+        request_id = knowledge_graph.start_request(
+            tool_name="search_workspaces",
+            arguments={
+                "query": query,
+                "workspace_id": workspace_id,
+                "max_results": max_results,
+                "search_type": search_type
+            },
+            workspace_id=workspace_id
+        )
+        
         if not global_client.registry:
+            knowledge_graph.complete_request(
+                request_id=request_id,
+                error_message="Registry not available"
+            )
             return json.dumps({
                 'error': 'Registry not available',
-                'query': query
+                'query': query,
+                'request_id': request_id
             }, indent=2)
 
         logger.info(f"Searching for: '{query}', workspace: {workspace_id}, type: {search_type}")
@@ -231,7 +250,8 @@ async def search_workspaces(query: str, workspace_id: str = None, max_results: i
             'search_type': search_type,
             'total_results': len(results),
             'workspaces_searched': len(workspaces),
-            'results': results[:max_results]
+            'results': results[:max_results],
+            'request_id': request_id
         }
 
         if not results:
@@ -244,16 +264,31 @@ async def search_workspaces(query: str, workspace_id: str = None, max_results: i
                 f"Try different search_type: {_suggest_search_type(query)}"
             ]
 
+        # Complete knowledge graph tracking
+        knowledge_graph.complete_request(
+            request_id=request_id,
+            result_summary=f"Found {len(results)} results across {len(workspaces)} workspaces"
+        )
+
         logger.info(f"Returning {len(results)} results")
         return json.dumps(result_data, indent=2)
 
     except Exception as e:
         error_msg = f"Error searching workspaces: {str(e)}"
         logger.error(error_msg)
+        
+        # Complete knowledge graph tracking with error
+        if 'request_id' in locals():
+            knowledge_graph.complete_request(
+                request_id=request_id,
+                error_message=error_msg
+            )
+        
         return json.dumps({
             'error': error_msg,
             'query': query,
-            'workspace_id': workspace_id
+            'workspace_id': workspace_id,
+            'request_id': locals().get('request_id')
         }, indent=2)
 
 
@@ -272,6 +307,19 @@ async def get_file_content(file_path: str, workspace_id: str = None, start_line:
         JSON string with file content, metadata, outline, and helpful suggestions
     """
     try:
+        # Track this request in the knowledge graph
+        knowledge_graph = get_knowledge_graph()
+        request_id = knowledge_graph.start_request(
+            tool_name="get_file_content",
+            arguments={
+                "file_path": file_path,
+                "workspace_id": workspace_id,
+                "start_line": start_line,
+                "end_line": end_line
+            },
+            workspace_id=workspace_id
+        )
+        
         resolved_path = file_path
         workspace_info = None
 
@@ -374,15 +422,31 @@ async def get_file_content(file_path: str, workspace_id: str = None, start_line:
                     ]
                 }
 
+        # Complete knowledge graph tracking
+        knowledge_graph.complete_request(
+            request_id=request_id,
+            result_summary=f"Read {len(result.get('content', []))} lines from {file_path}"
+        )
+        
+        result['request_id'] = request_id
         return json.dumps(result, indent=2)
 
     except Exception as e:
         error_msg = f"Error reading file: {str(e)}"
         logger.error(error_msg)
+        
+        # Complete knowledge graph tracking with error
+        if 'request_id' in locals():
+            knowledge_graph.complete_request(
+                request_id=request_id,
+                error_message=error_msg
+            )
+        
         return json.dumps({
             'error': error_msg,
             'file_path': file_path,
-            'workspace_id': workspace_id
+            'workspace_id': workspace_id,
+            'request_id': locals().get('request_id')
         }, indent=2)
 
 
@@ -627,6 +691,120 @@ async def get_function_content(file_path: str, function_name: str, workspace_id:
             'error': error_msg,
             'file_path': file_path,
             'function_name': function_name
+        }, indent=2)
+
+
+
+@mcp.tool()
+async def get_request_flow(request_id: str = None, max_depth: int = 10) -> str:
+    """
+    Get the complete request flow for a specific request or analyze request patterns.
+    
+    This tool provides insight into how AI requests flow through the MCP system,
+    showing sequential and parallel request patterns.
+    
+    Args:
+        request_id: Optional specific request ID to analyze (if None, returns recent flows)
+        max_depth: Maximum depth to traverse in the request flow graph
+        
+    Returns:
+        JSON string with request flow analysis including:
+        - Request timeline and dependencies
+        - Sequential and parallel request patterns
+        - Performance metrics
+        - Tool usage patterns
+    """
+    try:
+        knowledge_graph = get_knowledge_graph()
+        
+        if request_id:
+            # Get specific request flow
+            flow_data = knowledge_graph.get_request_flow(request_id, max_depth)
+            return json.dumps(flow_data, indent=2)
+        else:
+            # Get general patterns and recent activity
+            patterns = knowledge_graph.get_tool_usage_patterns()
+            
+            # Add recent request summary
+            recent_requests = []
+            for node in list(knowledge_graph.nodes.values())[-10:]:  # Last 10 requests
+                recent_requests.append({
+                    'request_id': node.request_id,
+                    'tool_name': node.tool_name,
+                    'timestamp': node.timestamp,
+                    'duration': node.duration,
+                    'status': node.status,
+                    'workspace_id': node.workspace_id
+                })
+            
+            result = {
+                'summary': {
+                    'total_tracked_requests': len(knowledge_graph.nodes),
+                    'active_sessions': len(knowledge_graph.active_sessions),
+                    'total_relationships': len(knowledge_graph.edges)
+                },
+                'patterns': patterns,
+                'recent_requests': recent_requests,
+                'usage_note': 'Use specific request_id from recent_requests to get detailed flow analysis'
+            }
+            
+            return json.dumps(result, indent=2)
+            
+    except Exception as e:
+        error_msg = f"Error getting request flow: {str(e)}"
+        logger.error(error_msg)
+        return json.dumps({
+            'error': error_msg,
+            'request_id': request_id
+        }, indent=2)
+
+
+@mcp.tool()
+async def get_knowledge_graph_stats() -> str:
+    """
+    Get statistics about the knowledge graph and request flow tracking.
+    
+    Returns:
+        JSON string with knowledge graph statistics including:
+        - Total requests tracked
+        - Tool usage patterns
+        - Request flow patterns
+        - Performance metrics
+    """
+    try:
+        knowledge_graph = get_knowledge_graph()
+        
+        # Get comprehensive patterns
+        patterns = knowledge_graph.get_tool_usage_patterns()
+        
+        # Calculate additional stats
+        stats = {
+            'tracking_summary': {
+                'total_requests': len(knowledge_graph.nodes),
+                'total_relationships': len(knowledge_graph.edges),
+                'active_sessions': len(knowledge_graph.active_sessions)
+            },
+            'tool_usage': dict(patterns['tool_usage']),
+            'performance': {
+                'avg_duration_by_tool': {
+                    tool: duration for tool, duration in patterns['avg_duration_by_tool'].items()
+                    if isinstance(duration, (int, float))
+                },
+                'error_rates': dict(patterns['error_rates'])
+            },
+            'request_patterns': {
+                'common_sequences': dict(patterns['common_sequences']),
+                'parallel_patterns': dict(patterns['parallel_patterns'])
+            }
+        }
+        
+        return json.dumps(stats, indent=2)
+        
+    except Exception as e:
+        error_msg = f"Error getting knowledge graph stats: {str(e)}"
+        logger.error(error_msg)
+        return json.dumps({
+            'error': error_msg
         }, indent=2)
 
 

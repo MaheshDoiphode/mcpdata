@@ -16,6 +16,7 @@ from .core.models import QueryResult
 from .core.config import ConfigManager, SearchConfig
 from .core.search import SearchEngine, CachedSearchEngine
 from .core.embeddings import EmbeddingManager
+from .core.knowledge_graph import get_knowledge_graph
 
 
 @dataclass
@@ -27,6 +28,8 @@ class QueryRequest:
     search_type: str = 'hybrid'  # 'keyword', 'semantic', 'hybrid'
     include_metadata: bool = False
     format: str = 'text'  # 'text', 'json', 'structured'
+    connection_id: Optional[str] = None  # For tracking request flows
+    parent_request_id: Optional[str] = None  # For chaining requests
 
 
 @dataclass
@@ -37,6 +40,7 @@ class QueryResponse:
     performance: Dict[str, float]
     results_count: int
     query_id: Optional[str] = None
+    request_id: Optional[str] = None  # For tracking in knowledge graph
 
 
 @dataclass
@@ -283,7 +287,7 @@ class MCPServer:
 
     async def query_async(self, request: QueryRequest, connection_id: str = None) -> QueryResponse:
         """
-        Asynchronous query processing
+        Asynchronous query processing with knowledge graph tracking
 
         Args:
             request: Query request object
@@ -293,6 +297,28 @@ class MCPServer:
             QueryResponse object
         """
         start_time = time.time()
+        
+        # Initialize knowledge graph tracking
+        knowledge_graph = get_knowledge_graph()
+        request_id = knowledge_graph.start_request(
+            tool_name="query_async",
+            arguments={
+                "query": request.query,
+                "search_type": request.search_type,
+                "max_tokens": request.max_tokens,
+                "limit": request.limit
+            },
+            connection_id=connection_id or request.connection_id
+        )
+        
+        # Track parent relationship if available
+        if request.parent_request_id:
+            knowledge_graph.add_relationship(
+                source_request_id=request.parent_request_id,
+                target_request_id=request_id,
+                relationship_type="sequential",
+                metadata={"trigger": "query_chaining"}
+            )
 
         # Track connection
         if connection_id:
@@ -311,6 +337,13 @@ class MCPServer:
             self._update_stats(query_time)
 
             response = self._format_response(results, request, query_time)
+            response.request_id = request_id
+            
+            # Complete knowledge graph tracking
+            knowledge_graph.complete_request(
+                request_id=request_id,
+                result_summary=f"Found {len(results)} results in {query_time:.3f}s"
+            )
 
             self.logger.info(
                 f"Query processed: '{request.query[:50]}...' "
@@ -322,11 +355,19 @@ class MCPServer:
         except Exception as e:
             self.logger.error(f"Query failed: {e}")
             query_time = time.time() - start_time
+            
+            # Complete knowledge graph tracking with error
+            knowledge_graph.complete_request(
+                request_id=request_id,
+                error_message=str(e)
+            )
+            
             return QueryResponse(
                 content=f"Error processing query: {str(e)}",
                 metadata={'error': str(e), 'timestamp': time.time()},
                 performance={'query_time': query_time, 'error': True},
-                results_count=0
+                results_count=0,
+                request_id=request_id
             )
 
         finally:
@@ -335,7 +376,7 @@ class MCPServer:
 
     def query_sync(self, request: QueryRequest) -> QueryResponse:
         """
-        Synchronous query processing
+        Synchronous query processing with knowledge graph tracking
 
         Args:
             request: Query request object
@@ -344,6 +385,28 @@ class MCPServer:
             QueryResponse object
         """
         start_time = time.time()
+        
+        # Initialize knowledge graph tracking
+        knowledge_graph = get_knowledge_graph()
+        request_id = knowledge_graph.start_request(
+            tool_name="query_sync",
+            arguments={
+                "query": request.query,
+                "search_type": request.search_type,
+                "max_tokens": request.max_tokens,
+                "limit": request.limit
+            },
+            connection_id=request.connection_id
+        )
+        
+        # Track parent relationship if available
+        if request.parent_request_id:
+            knowledge_graph.add_relationship(
+                source_request_id=request.parent_request_id,
+                target_request_id=request_id,
+                relationship_type="sequential",
+                metadata={"trigger": "query_chaining"}
+            )
 
         try:
             results = self._execute_query(request)
@@ -351,6 +414,13 @@ class MCPServer:
             self._update_stats(query_time)
 
             response = self._format_response(results, request, query_time)
+            response.request_id = request_id
+            
+            # Complete knowledge graph tracking
+            knowledge_graph.complete_request(
+                request_id=request_id,
+                result_summary=f"Found {len(results)} results in {query_time:.3f}s"
+            )
 
             self.logger.info(
                 f"Query processed: '{request.query[:50]}...' "
@@ -362,11 +432,19 @@ class MCPServer:
         except Exception as e:
             self.logger.error(f"Query failed: {e}")
             query_time = time.time() - start_time
+            
+            # Complete knowledge graph tracking with error
+            knowledge_graph.complete_request(
+                request_id=request_id,
+                error_message=str(e)
+            )
+            
             return QueryResponse(
                 content=f"Error processing query: {str(e)}",
                 metadata={'error': str(e), 'timestamp': time.time()},
                 performance={'query_time': query_time, 'error': True},
-                results_count=0
+                results_count=0,
+                request_id=request_id
             )
 
     def _execute_query(self, request: QueryRequest) -> List[QueryResult]:
