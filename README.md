@@ -6,7 +6,7 @@ A comprehensive system for local documentation indexing and AI-powered search th
 
 **localmcp** consists of two complementary components:
 
-1. **[mcpdata](mcpdata/README.md)** - Fast indexing engine that creates searchable indexes
+1. **[mcpdata](src/README.md)** - Fast indexing engine that creates searchable indexes
 2. **[mcp-global-server](mcp-global-server/README.md)** - MCP server that provides AI search tools
 
 Together, they enable AI assistants to search across all your documentation and code repositories intelligently.
