@@ -439,18 +439,18 @@ from mcpdata import init_directory, query_directory
 # Create test directory
 with tempfile.TemporaryDirectory() as tmp_dir:
     tmp_path = Path(tmp_dir)
-    
+
     # Create test file
     (tmp_path / "test.md").write_text("# Test\nThis is a test document.")
-    
+
     # Index
     stats = init_directory(str(tmp_path))
     assert stats['files_processed'] > 0
-    
+
     # Search
     results = query_directory(str(tmp_path), "test")
     assert len(results) > 0
-    
+
     print("✅ Basic functionality works!")
 ```
 
