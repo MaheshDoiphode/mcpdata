@@ -1,0 +1,13 @@
+# MCP Global Server Dependencies
+mcp>=1.0.0
+fastmcp>=0.1.0
+python-dotenv>=1.0.0
+
+# Optional: for enhanced functionality
+httpx>=0.25.0
+
+# Standard library dependencies (usually included with Python)
+# pathlib - built-in
+# json - built-in
+# logging - built-in
+# asyncio - built-in
