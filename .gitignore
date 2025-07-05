@@ -1,0 +1,3 @@
+*.mcpdata/
+*build/
+*mcpdata.egg-info/
