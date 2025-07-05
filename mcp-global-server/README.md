@@ -350,17 +350,6 @@ Enable debug logging by modifying `server.py`:
 logging.basicConfig(level=logging.DEBUG)
 ```
 
-## Performance
-
-- **Global search**: ~50-200ms across all workspaces
-- **File content**: ~10-50ms per file
-- **Function extraction**: ~20-100ms per function
-
-Performance scales with:
-- Number of registered workspaces
-- Total content size
-- Query complexity
-
 ## Security
 
 - Only accesses files within registered workspaces
