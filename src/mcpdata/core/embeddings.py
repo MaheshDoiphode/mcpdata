@@ -2,7 +2,6 @@
 Embeddings module for vector embedding management
 """
 
-import numpy as np
 import json
 import time
 from pathlib import Path

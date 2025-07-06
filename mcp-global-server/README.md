@@ -197,6 +197,40 @@ Extract complete function or method content.
 - `function_name` (string): Function/method name
 - `workspace_id` (optional): For relative paths
 
+### 🧠 `get_request_flow`
+
+Analyze request flow patterns and dependencies in the knowledge graph.
+
+**AI Usage Examples:**
+- "Show me the request flow for the authentication search"
+- "Analyze how my recent requests are connected"
+- "What request patterns do I typically follow?"
+
+**Parameters:**
+- `request_id` (optional): Specific request to analyze (if None, shows recent patterns)
+- `max_depth` (optional): Maximum depth to traverse (default: 10)
+
+**Features:**
+- **Request timeline** showing sequential and parallel patterns
+- **Dependency chains** (A → B → C flows)
+- **Parallel request groups** 
+- **Performance metrics** per request
+
+### 📊 `get_knowledge_graph_stats`
+
+Get comprehensive statistics about tool usage and request patterns.
+
+**AI Usage Examples:**
+- "What are my most used tools?"
+- "Show me request performance statistics"
+- "What are common tool usage patterns?"
+
+**Features:**
+- **Tool usage frequency** and performance metrics
+- **Common request sequences** (search → file → function patterns)
+- **Error rates** and troubleshooting data
+- **Session tracking** and concurrent usage stats
+
 ## Configuration
 
 ### Environment Variables

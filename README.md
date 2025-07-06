@@ -103,6 +103,20 @@ Create or edit: `C:\Users\%UserProfile%\AppData\Roaming\Code\User\mcp.json`
 - **Documentation Teams** - Search across multiple doc repositories
 - **Development Teams** - Find code patterns across repositories
 - **Mixed Projects** - Unified search for docs + code
+- **AI Analysis** - Track request flows and analyze interaction patterns
+
+## 🧠 Knowledge Graph
+
+The system includes an advanced knowledge graph that tracks how AI requests flow through the MCP system:
+
+- **Request Flow Tracking** - See how search → file retrieval → function analysis chains work
+- **Performance Analytics** - Monitor tool usage patterns and response times  
+- **Pattern Recognition** - Identify common request sequences and parallel patterns
+- **New MCP Tools**:
+  - `get_request_flow` - Analyze request flow patterns
+  - `get_knowledge_graph_stats` - Get usage statistics
+
+See [Knowledge Graph Documentation](docs/KNOWLEDGE_GRAPH.md) for detailed information.
 
 ## 📜 License
 
