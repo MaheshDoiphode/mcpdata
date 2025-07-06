@@ -428,6 +428,134 @@ class JavaScriptParser(BaseParser):
         return symbols
 
 
+class JavaParser(BaseParser):
+    """Parser for Java code"""
+
+    def __init__(self):
+        super().__init__()
+        self.supported_extensions = ['.java']
+
+    def parse(self, file_path: Path, content: str) -> List[CodeSymbol]:
+        """Parse Java code and extract symbols"""
+        symbols = []
+        lines = content.split('\n')
+        
+        # Track current package and class for scope information
+        current_package = None
+        current_class = None
+        brace_depth = 0
+        
+        for line_num, line in enumerate(lines, 1):
+            stripped_line = line.strip()
+            
+            # Skip empty lines and comments
+            if not stripped_line or stripped_line.startswith('//') or stripped_line.startswith('/*'):
+                continue
+                
+            # Track brace depth for scope
+            brace_depth += line.count('{') - line.count('}')
+            
+            # Package declaration
+            package_match = re.match(r'^\s*package\s+([\w.]+)\s*;', line)
+            if package_match:
+                current_package = package_match.group(1)
+                
+            # Import statements
+            import_match = re.match(r'^\s*import\s+(?:static\s+)?([\w.*]+)\s*;', line)
+            if import_match:
+                import_name = import_match.group(1)
+                symbols.append(CodeSymbol(
+                    name=import_name.split('.')[-1],
+                    type='import',
+                    file_path=str(file_path),
+                    line_number=line_num,
+                    column=0,
+                    scope='global',
+                    signature=f"import {import_name}",
+                    docstring=None
+                ))
+                
+            # Class/Interface/Enum declarations
+            class_match = re.match(r'^\s*(?:public\s+|private\s+|protected\s+|abstract\s+|final\s+|static\s+)*\s*(class|interface|enum)\s+(\w+)(?:\s+extends\s+\w+)?(?:\s+implements\s+[\w,\s]+)?', line)
+            if class_match:
+                class_type = class_match.group(1)
+                class_name = class_match.group(2)
+                current_class = class_name
+                
+                # Generate scope
+                scope = current_package if current_package else 'default'
+                
+                symbols.append(CodeSymbol(
+                    name=class_name,
+                    type=class_type,
+                    file_path=str(file_path),
+                    line_number=line_num,
+                    column=0,
+                    scope=scope,
+                    signature=f"{class_type} {class_name}",
+                    docstring=None
+                ))
+                
+            # Method declarations
+            method_match = re.match(r'^\s*(?:public\s+|private\s+|protected\s+|static\s+|final\s+|abstract\s+|synchronized\s+)*\s*(?:(\w+(?:<[^>]+>)?)\s+)?(\w+)\s*\(([^)]*)\)\s*(?:throws\s+[\w,\s]+)?\s*[{;]', line)
+            if method_match and current_class:
+                return_type = method_match.group(1) or 'void'
+                method_name = method_match.group(2)
+                params = method_match.group(3)
+                
+                # Skip constructors (method name same as class name)
+                if method_name == current_class:
+                    method_type = 'constructor'
+                    signature = f"{method_name}({params})"
+                else:
+                    method_type = 'method'
+                    signature = f"{return_type} {method_name}({params})"
+                
+                # Generate scope
+                scope = f"{current_package}.{current_class}" if current_package else current_class
+                
+                symbols.append(CodeSymbol(
+                    name=method_name,
+                    type=method_type,
+                    file_path=str(file_path),
+                    line_number=line_num,
+                    column=0,
+                    scope=scope,
+                    signature=signature,
+                    docstring=None
+                ))
+                
+            # Field declarations
+            field_match = re.match(r'^\s*(?:public\s+|private\s+|protected\s+|static\s+|final\s+|volatile\s+|transient\s+)*\s*(\w+(?:<[^>]+>)?)\s+(\w+)(?:\s*=\s*[^;]+)?\s*;', line)
+            if field_match and current_class and brace_depth > 0:
+                field_type = field_match.group(1)
+                field_name = field_match.group(2)
+                
+                # Skip common non-field patterns
+                if field_type in ['return', 'throw', 'if', 'for', 'while', 'try', 'catch', 'finally', 'switch', 'case', 'default']:
+                    continue
+                
+                # Generate scope
+                scope = f"{current_package}.{current_class}" if current_package else current_class
+                
+                symbols.append(CodeSymbol(
+                    name=field_name,
+                    type='field',
+                    file_path=str(file_path),
+                    line_number=line_num,
+                    column=0,
+                    scope=scope,
+                    signature=f"{field_type} {field_name}",
+                    docstring=None
+                ))
+                
+            # Reset current class when we exit its scope
+            if brace_depth == 0 and current_class:
+                current_class = None
+
+        return symbols
+
+
 class ParserFactory:
     """Factory for creating appropriate parsers"""
 
@@ -437,6 +565,7 @@ class ParserFactory:
             RestructuredTextParser(),
             PythonParser(),
             JavaScriptParser(),
+            JavaParser(),
         ]
 
     def get_parser(self, file_path: Path) -> Optional[BaseParser]:
